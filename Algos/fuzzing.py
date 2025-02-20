@@ -12,12 +12,40 @@ from random import randint, choice
 gates = [gate for gate in get_standard_gate_name_mapping().values() if gate.params == [] and gate.num_clbits == 0]
 
 
-def fuzzing(nb_circuits, nb_qbits, nb_gates) :
+def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, random_init = False) -> list[QuantumCircuit] :
+    """
+    Generates a list of circuits with random gates and Qbits
+
+    Parameters
+    ----------
+    nb_circuits : int
+        Number of circuits to generate
+
+    nb_qbits : int
+        Number of Qbits in each circuit
+
+    nb_gates : int
+        Number of gates in each circuit
+
+    random_init : bool
+        If True, apply Hadamard gates to all Qbits before applying the random gates
+
+    Returns
+    -------
+    list
+        A list of QuantumCircuit objects
+    """
+
     print(f"Generating {nb_circuits} circuits with {nb_qbits} Qbits and {nb_gates} gates")
     circuits = []
     for i in range(nb_circuits) :
         print(f"\nGenerating circuit {i+1}")
         qc = QuantumCircuit(nb_qbits)
+
+        if random_init :
+            qc.h(range(nb_qbits))
+            print("Applied Hadamard gate to all Qbits")
+
         for _ in range(nb_gates) :
             rand_gate = choice(gates)
             qbits_needed = rand_gate.num_qubits
@@ -45,7 +73,7 @@ def fuzzing(nb_circuits, nb_qbits, nb_gates) :
 
 
 def execute() :
-    circuits = fuzzing(1, 10, 25)
+    circuits = fuzzing(1, 10, 25, random_init = True)
 
     for i in range(len(circuits)) :
         qc = circuits[i]
