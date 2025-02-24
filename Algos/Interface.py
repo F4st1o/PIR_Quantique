@@ -1,3 +1,24 @@
+from qiskit import QuantumCircuit, transpile
+from qiskit_aer import AerSimulator
+from qiskit.visualization import plot_histogram
+from qiskit_aer.noise import NoiseModel
+from qiskit.providers.fake_provider import FakeVigo
+
+def res_noise(qc) :
+    backend = FakeVigo()
+    noise_model = NoiseModel.from_backend(backend)
+
+    coupling_map = backend.configuration().coupling_map
+
+    basis_gates = noise_model.basis_gates
+
+    backend = AerSimulator(noise_model=noise_model, coupling_map=coupling_map, basis_gates=basis_gates)
+    transpiled_circuit = transpile(qc, backend)
+    result = backend.run(transpiled_circuit).result()
+
+    counts = result.get_counts(0)
+    plot_histogram(counts)
+
 def conc_res(qc) :
     res = []
 
