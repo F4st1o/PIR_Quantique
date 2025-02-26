@@ -2,10 +2,10 @@ from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 from qiskit.visualization import plot_histogram
 from qiskit_aer.noise import NoiseModel
-from qiskit.providers.fake_provider import FakeVigo
+from qiskit_ibm_runtime.fake_provider import FakeVigoV2
 
 def res_noise(qc) :
-    backend = FakeVigo()
+    backend = FakeVigoV2() # Noise type ?
     noise_model = NoiseModel.from_backend(backend)
 
     coupling_map = backend.configuration().coupling_map
