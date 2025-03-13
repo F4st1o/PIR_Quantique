@@ -5,14 +5,17 @@ from qiskit.visualization import plot_histogram
  
 import matplotlib.pyplot as plt
 
-from random import randint, choice
+from random import sample, choice
+
+import time
+from datetime import datetime
 
 
 # Ignoring gates with parameters for now
 gates = [gate for gate in get_standard_gate_name_mapping().values() if gate.params == [] and gate.num_clbits == 0]
 
 
-def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, random_init = False) -> list[QuantumCircuit] :
+def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save, verbose = False, random_init = False) -> list[QuantumCircuit, str] :
     """
     Generates a list of circuits with random gates and Qbits
 
@@ -39,12 +42,19 @@ def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, random_init = False)
     print(f"Generating {nb_circuits} circuits with {nb_qbits} Qbits and {nb_gates} gates")
     circuits = []
     for i in range(nb_circuits) :
-        print(f"\nGenerating circuit {i+1}")
+        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        if save :
+            fichier = open("data/" + date, "w")
+            fichier.write(f"nb_qbits = {nb_qbits}\n")
+            fichier.write(f"nb_gates = {nb_gates}\n")
+
+        if verbose : print(f"\nGenerating circuit {i+1}")
         qc = QuantumCircuit(nb_qbits)
 
         if random_init :
             qc.h(range(nb_qbits))
-            print("Applied Hadamard gate to all Qbits")
+            if verbose : print("Applied Hadamard gate to all Qbits")
+            if save : fichier.write(f"h : {list(range(nb_qbits))}\n")
 
         for _ in range(nb_gates) :
             rand_gate = choice(gates)
@@ -54,16 +64,17 @@ def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, random_init = False)
                 raise ValueError(f"The required number of Qbits for the gate {rand_gate} is greater than the number of Qbits in the circuit ({nb_qbits})")
 
             # Generate a list of distinct random Qbits
-            rand_qbits = set()
-            while(len(rand_qbits) < qbits_needed) :
-                rand_qbits.add(randint(0, nb_qbits - 1))
+            rand_qbits = sample(range(nb_qbits), qbits_needed)
 
-            print(f"Added gate : {rand_gate.name.ljust(5)}\t on Qbits : {rand_qbits}")
-            qc.append(rand_gate, list(rand_qbits))  # Adds the gate to the circuit
+            if verbose : print(f"Added gate : {rand_gate.name.ljust(5)}\t on Qbits : {rand_qbits}")
+            if save : fichier.write(f"{rand_gate.name} : {rand_qbits}\n")
+
+            qc.append(rand_gate, rand_qbits)  # Adds the gate to the circuit
             
         
         qc.measure_all()
-        circuits.append(qc)
+        circuits.append((qc, date))
+        if save : fichier.close()
 
 
     print("\nAll circuits generated\n")
@@ -72,23 +83,41 @@ def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, random_init = False)
 
 
 
-def execute() :
-    circuits = fuzzing(1, 10, 25, random_init = True)
+def execute(repetition = 50, save = True) :
+    circuits = fuzzing(2, 10, 25, save, verbose=True, random_init = True)
 
     for i in range(len(circuits)) :
-        qc = circuits[i]
+        qc, date = circuits[i]
 
         
         simulator = AerSimulator()
-        qc = transpile(qc, simulator)
+        qc = transpile(qc, simulator, optimization_level=0)
         qc.draw('mpl')
 
-        result = simulator.run(qc).result()
-        counts = result.get_counts(qc)
+        total_exec_time = 0
+        total_simul_time = 0
 
-        print(f"Results for circuit {i+1} :", counts)
-        plot_histogram(counts)
-        plt.show()
+        for _ in range(repetition) :
+            start = time.perf_counter()
+            result = simulator.run(qc).result()
+            end = time.perf_counter()
+
+            total_exec_time += (end - start)
+            total_simul_time += result.time_taken
+
+        print(f"Durée d'exécution moyen: {1000*total_exec_time/repetition} ms")
+        print(f"Temps simulation moyen : {1000*total_simul_time/repetition} ms\n")
+        
+        if save :
+            with open("data/" + date, "a") as fichier :
+                fichier.write(f"Durée d'exécution moyen: {1000*total_exec_time/repetition} ms\n")
+                fichier.write(f"Temps simulation moyen : {1000*total_simul_time/repetition} ms\n")
+
+        # counts = result.get_counts(qc)
+
+        # print(f"Results for circuit {i+1} :", counts)
+        # plot_histogram(counts)
+        # plt.show()
 
 
 
