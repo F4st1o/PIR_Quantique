@@ -42,7 +42,7 @@ def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save, verbose = Fals
     print(f"Generating {nb_circuits} circuits with {nb_qbits} Qbits and {nb_gates} gates")
     circuits = []
     for i in range(nb_circuits) :
-        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        date = datetime.now().strftime("%Y-%m-%d %H-%M-%S.%f")[:-3]
         if save :
             fichier = open("data/" + date, "w")
             fichier.write(f"nb_qbits = {nb_qbits}\n")
