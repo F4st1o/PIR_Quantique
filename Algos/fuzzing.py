@@ -15,7 +15,7 @@ from datetime import datetime
 gates = [gate for gate in get_standard_gate_name_mapping().values() if gate.params == [] and gate.num_clbits == 0]
 
 
-def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save = False, verbose = False, random_init = False) -> list[QuantumCircuit, str] :
+def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save , verbose = False, random_init = False) -> list[QuantumCircuit, str] :
     """
     Generates a list of circuits with random gates and Qbits
 
@@ -43,7 +43,7 @@ def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save = False, verbos
     circuits = []
     for i in range(nb_circuits) :
         date = datetime.now().strftime("%Y-%m-%d %H-%M-%S.%f")[:-3]
-        if save == True:
+        if save:
             print("test")
             fichier = open("data/" + date, "w")
             fichier.write(f"nb_qbits = {nb_qbits}\n")
@@ -85,7 +85,7 @@ def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save = False, verbos
 
 
 def execute(repetition = 50, save = True) :
-    circuits = fuzzing(2, 10, 25, save=False, verbose=True, random_init = True)
+    circuits = fuzzing(2, 10, 25, save, verbose=True, random_init = True)
 
     for i in range(len(circuits)) :
         qc, date = circuits[i]
