@@ -15,7 +15,7 @@ from datetime import datetime
 gates = [gate for gate in get_standard_gate_name_mapping().values() if gate.params == [] and gate.num_clbits == 0]
 
 
-def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save, verbose = False, random_init = False) -> list[QuantumCircuit, str] :
+def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save = False, verbose = False, random_init = False) -> list[QuantumCircuit, str] :
     """
     Generates a list of circuits with random gates and Qbits
 
@@ -43,7 +43,8 @@ def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save, verbose = Fals
     circuits = []
     for i in range(nb_circuits) :
         date = datetime.now().strftime("%Y-%m-%d %H-%M-%S.%f")[:-3]
-        if save :
+        if save == True:
+            print("test")
             fichier = open("data/" + date, "w")
             fichier.write(f"nb_qbits = {nb_qbits}\n")
             fichier.write(f"nb_gates = {nb_gates}\n")
@@ -84,7 +85,7 @@ def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save, verbose = Fals
 
 
 def execute(repetition = 50, save = True) :
-    circuits = fuzzing(2, 10, 25, save, verbose=True, random_init = True)
+    circuits = fuzzing(2, 10, 25, save=False, verbose=True, random_init = True)
 
     for i in range(len(circuits)) :
         qc, date = circuits[i]
@@ -105,12 +106,12 @@ def execute(repetition = 50, save = True) :
             total_exec_time += (end - start)
             total_simul_time += result.time_taken
 
-        print(f"Durée d'exécution moyen: {1000*total_exec_time/repetition} ms")
+        print(f"Duree d'execution moyen: {1000*total_exec_time/repetition} ms")
         print(f"Temps simulation moyen : {1000*total_simul_time/repetition} ms\n")
         
         if save :
             with open("data/" + date, "a") as fichier :
-                fichier.write(f"Durée d'exécution moyen: {1000*total_exec_time/repetition} ms\n")
+                fichier.write(f"Duree d'execution moyen: {1000*total_exec_time/repetition} ms\n")
                 fichier.write(f"Temps simulation moyen : {1000*total_simul_time/repetition} ms\n")
 
         # counts = result.get_counts(qc)
