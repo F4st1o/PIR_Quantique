@@ -2,39 +2,59 @@ from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 from qiskit.visualization import plot_histogram
 from qiskit_aer.noise import NoiseModel
-from qiskit_ibm_runtime.fake_provider import FakeVigoV2
+from qiskit_ibm_runtime import QiskitRuntimeService
 
-def res_noise(qc) :
-    backend = FakeVigoV2() # Noise type ?
+import matplotlib.pyplot as plt
+
+def get_noise_models(my_token, my_backend) :
+    service = QiskitRuntimeService(channel='ibm_quantum', token = my_token)
+    backend = service.backend(my_backend)
     noise_model = NoiseModel.from_backend(backend)
 
-    coupling_map = backend.configuration().coupling_map
+    # Sauvegarder le modèle de bruit localement
+    import pickle
+    with open(my_backend + "_noise.pkl", "wb") as f:
+        pickle.dump(noise_model, f)
 
-    basis_gates = noise_model.basis_gates
+def get_sim_from_noise(qc, my_backend) :
+    # Backends physiques != simulés (aer, qasm, ...) :
+    # ibmq_manila : un processeur quantique à 5 qubits
+    # ibmq_jakarta : un processeur quantique à 7 qubits
+    # ibm_washington : un processeur quantique à 127 qubits
 
-    backend = AerSimulator(noise_model=noise_model, coupling_map=coupling_map, basis_gates=basis_gates)
-    transpiled_circuit = transpile(qc, backend)
-    result = backend.run(transpiled_circuit).result()
+    """ Pour créer une session avec un calculateur quantique à partir d'un token """
+    ################################################################################
+    # service = QiskitRuntimeService(channel='ibm_quantum', token = my_token)
+    # -> Connexion via ibm_quantum (Accès gratuit ou premium, channel standard)
+    # -> Connexion via ibm_cloud (Accès avec compte IBM Cloud pour du cloud)
+    ################################################################################
 
-    counts = result.get_counts(0)
-    plot_histogram(counts)
+    import pickle
+    with open(my_backend + "_noise.pkl", "rb") as f:
+        my_noise_model = pickle.load(f)
+
+    qc_transpiled = transpile(qc, backend=my_backend) # traduit le circuit en utilisant uniquement les portes natives du backend choisi
+    simulator = AerSimulator(noise_model=my_noise_model)
+
+    return simulator
+    # result = simulator.run(qc_transpiled).result()
 
 def conc_res(qc) :
     res = []
 
     result1 = AerSimulator().run(qc).result()
-    count1s = result1.get_counts()
-    res.append(count1s)
+    counts1 = result1.get_counts()
+    res.append(counts1)
     print(counts1)
 
     result2 = TerraSampler().run(qc).result()
     counts2 = pub_result2.quasi_dists[0]
-    res.append(count2s)
+    res.append(counts2)
     print(counts2)
 
     return res
 
-def print_res_by_sim(nom_sim) :
+def print_res_by_sim(nom_sim, qc) :
     res = conc_res(qc)
 
     match nom_sim:
