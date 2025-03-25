@@ -5,6 +5,7 @@ from qiskit.visualization import plot_histogram
 
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from scipy.stats import norm, gaussian_kde
 
 from random import sample, choice
@@ -16,13 +17,9 @@ from datetime import datetime
 # Ignoring gates with parameters for now
 gates = [gate for gate in get_standard_gate_name_mapping().values() if gate.params == [] and gate.num_clbits == 0]
 
-def remove_outliers(data):
+def remove_outliers(data, upper_bound):
     """ Supprime les valeurs extrêmes basées sur l'IQR """
-    q1, q3 = np.percentile(data, [25, 75])
-    iqr = q3 - q1
-    lower_bound = q1 - 1.5 * iqr
-    upper_bound = q3 + 1.5 * iqr
-    return [x for x in data if lower_bound <= x <= upper_bound]
+    return [x for x in data if x <= upper_bound]
 
 
 def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save , verbose = False, random_init = False) -> list[QuantumCircuit, str] :
@@ -92,12 +89,36 @@ def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save , verbose = Fal
     return circuits
 
 
+def graph3d(circuit_list) :
+    fig = plt.figure(figsize=(10, 6))
+    ax = fig.add_subplot(111, projection='3d')
 
+    bin_count = 500  # Nombre de bins sur l'axe X (temps)
+    bin_edges = np.linspace(0, 200, bin_count + 1)  # Plage commune
+
+    # Largeur des barres
+    dx = (bin_edges[1] - bin_edges[0]) * 0.8
+    dy = 0.8  # hauteur entre circuits
+
+    for i, times in enumerate(circuit_list):
+        hist, _ = np.histogram(times, bins=bin_edges)
+        xs = bin_edges[:-1]
+        ys = np.full_like(xs, i)
+
+        ax.bar3d(xs, ys, np.zeros_like(xs), dx, dy, hist, shade=True)
+
+    # Étiquettes
+    ax.set_xlabel("Temps d'exécution (ms)")
+    ax.set_ylabel("Index du circuit")
+    ax.set_zlabel("Fréquence")
+    ax.set_yticks([0, 1, 2])
+    ax.set_yticklabels(["Circuit 1", "Circuit 2", "Circuit 3"])
+    ax.set_title("Histogramme 3D des temps d'exécution")
+
+    plt.tight_layout()
+    plt.show()
 
 def graph(time_list) :
-    # Suppression des valeurs extrêmes --------------------------------------------
-    time_list = remove_outliers(time_list)
-
     # Calcul des statistiques
     mean_time = np.mean(time_list)
     std_time = np.std(time_list)
@@ -123,9 +144,10 @@ def graph(time_list) :
     # -----------------------------------------------------
 
 
-def execute(repetition = 5000, save = True) :
-    circuits = fuzzing(1, 10, 25, save, verbose=False, random_init = True)
+def execute(repetition = 1000, save = True) :
+    circuits = fuzzing(3, 10, 25, save, verbose=False, random_init = True)
 
+    time_list_list = []
     for i in range(len(circuits)) :
         qc, date = circuits[i]
 
@@ -151,13 +173,17 @@ def execute(repetition = 5000, save = True) :
             if n%100 == 0 : print(n, time_list[-1])
 
         
-
-        print(f"Duree d'execution moyen: {1000*total_exec_time/repetition} ms")
+        average = 1000*total_exec_time/repetition
+        print(f"Duree d'execution moyen: {average} ms")
         #print(f"Temps simulation moyen : {1000*total_simul_time/repetition} ms\n")
         #print(f"Avant filtrage: {len(time_list)} valeurs, après filtrage: {len(time_list)} valeurs\n")
 
 
+        # Suppression des valeurs extrêmes
+        time_list = remove_outliers(time_list, 2*average)
+
         graph(time_list)
+        time_list_list.append(time_list)
         
         
         if save :
@@ -170,6 +196,8 @@ def execute(repetition = 5000, save = True) :
         # print(f"Results for circuit {i+1} :", counts)
         # plot_histogram(counts)
         plt.show()
+
+    graph3d(time_list_list)
 
 
 
