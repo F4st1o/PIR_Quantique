@@ -2,6 +2,11 @@ from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 from qiskit.circuit.library import get_standard_gate_name_mapping
 from qiskit.visualization import plot_histogram
+from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler
+
+from qiskit_ibm_runtime import Options
+# Pour affichage et outliers
+#from utils import remove_outliers, graph, graph3d
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,6 +19,10 @@ import time
 from datetime import datetime
 
 
+TOKEN = "5beaf0819b6a2df9aa41c94a0e65b3d8520c89c158823545dcb70710b4ecb6efd5d524de45d2b58a1172d3675407c53edad235f46d861cec36b24bba12671853"
+
+# QiskitRuntimeService.save_account(token=TOKEN, overwrite=True, channel="ibm_quantum")
+
 # Ignoring gates with parameters for now
 gates = [gate for gate in get_standard_gate_name_mapping().values() if gate.params == [] and gate.num_clbits == 0]
 
@@ -22,7 +31,7 @@ def remove_outliers(data, upper_bound):
     return [x for x in data if x <= upper_bound]
 
 
-def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save , verbose = False, random_init = False) -> list[QuantumCircuit, str] :
+def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save=False, verbose = False, random_init = False) -> list[QuantumCircuit, str] :
     """
     Generates a list of circuits with random gates and Qbits
 
@@ -31,25 +40,14 @@ def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save , verbose = Fal
     nb_circuits : int
         Number of circuits to generate
 
-    nb_qbits : int
-        Number of Qbits in each circuit
-
-    nb_gates : int
-        Number of gates in each circuit
-
-    random_init : bool
-        If True, apply Hadamard gates to all Qbits before applying the random gates
-
-    Returns
-    -------
-    list
+    nb_qQiskitRuntimeService()
         A list of QuantumCircuit objects
     """
 
     print(f"Generating {nb_circuits} circuits with {nb_qbits} Qbits and {nb_gates} gates")
     circuits = []
     for i in range(nb_circuits) :
-        date = datetime.now().strftime("%Y-%m-%d %H-%M-%S.%f")[:-3]
+        date = datetime.now().strftime("%Y-%m-%d %H-%M-%S-%f")[:-3]
         if save:
             print("test")
             fichier = open("data/" + date, "w")
@@ -200,5 +198,41 @@ def execute(repetition = 1000, save = True) :
     graph3d(time_list_list)
 
 
+def calculate() :
+    circuits = fuzzing(1, 10, 25, save=False, verbose=True, random_init = True)
 
-execute()
+    example_circuit, date = circuits[0]
+
+    # You'll need to specify the credentials when initializing QiskitRuntimeService, if they were not previously saved.
+    service = QiskitRuntimeService()
+    backend = service.least_busy(operational=True, simulator=False)
+
+    qc = transpile(example_circuit, backend=backend, optimization_level=0)
+    
+    sampler = Sampler(backend)
+    print("Running job")
+    job = sampler.run([qc], shots=100)
+    print(f"job id: {job.job_id()}")
+
+    return job.job_id()
+
+
+
+    
+
+
+def getResults(job_id) :
+    service = QiskitRuntimeService()
+
+    job = service.job(job_id)
+
+    print("Waiting for results")
+    result = job.result()[0]
+    print("Got results")
+
+    print(result.data.meas.get_counts())
+
+
+#execute()
+#job_id = calculate()
+getResults("czq56gtd8drg008gf0yg")
