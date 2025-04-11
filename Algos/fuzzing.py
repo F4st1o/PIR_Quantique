@@ -102,6 +102,7 @@ def graph3d(circuit_list) :
         hist, _ = np.histogram(times, bins=bin_edges)
         xs = bin_edges[:-1]
         ys = np.full_like(xs, i)
+        hist = [np.log(1+x) for x in hist] 
 
         ax.bar3d(xs, ys, np.zeros_like(xs), dx, dy, hist, shade=True)
 
@@ -116,33 +117,41 @@ def graph3d(circuit_list) :
     plt.tight_layout()
     plt.show()
 
-def graph(time_list) :
-    # Calcul des statistiques
+def graph(time_list):
+    # Calcul des stats
     mean_time = np.mean(time_list)
     std_time = np.std(time_list)
 
-    # Tracer l'histogramme normalisé
-    plt.hist(time_list, bins="auto", density=True, alpha=0.5, color='b', label="Données")
+    # Histogramme
+    counts, bins = np.histogram(time_list, bins=50)
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+    widths = np.diff(bins)
 
-    # Estimation par noyau gaussien (KDE)
+    plt.bar(bin_centers, counts, width=widths, align='center', color='skyblue', edgecolor='black', label="Histogramme")
+
+    # KDE
     kde = gaussian_kde(time_list)
     x_range = np.linspace(min(time_list), max(time_list), 100)
-    plt.plot(x_range, kde(x_range), 'g', label="Densité estimée (KDE)")
+    kde_vals = kde(x_range)
+    plt.plot(x_range, kde_vals, 'g', label="KDE")
 
-    # Superposition de la gaussienne ajustée (Normal PDF)
+    # PDF normale
     pdf = norm.pdf(x_range, mean_time, std_time)
-    plt.plot(x_range, pdf, 'r', linestyle="dashed", label="Distribution Normale ajustée")
+    plt.plot(x_range, pdf, 'r--', label="PDF normale")
+
+    # Appliquer une échelle log sur l'axe Y
+    plt.yscale('log')
 
     # Affichage
     plt.xlabel("Temps de simulation (ms)")
-    plt.ylabel("Densité de probabilité")
-    plt.title("Distribution du temps de simulation")
+    plt.ylabel("Fréquence / Densité (échelle log)")
+    plt.title("Distribution du temps de simulation (échelle log)")
     plt.legend()
+    plt.grid(True, which="both", linestyle="--", linewidth=0.5)
     plt.show()
-    # -----------------------------------------------------
 
 
-def execute(repetition = 1000, save = True) :
+def execute(repetition = 100, save = True) :
     circuits = fuzzing(3, 10, 25, save, verbose=False, random_init = True)
 
     time_list_list = []
@@ -179,7 +188,6 @@ def execute(repetition = 1000, save = True) :
 
         # Suppression des valeurs extrêmes
         time_list = remove_outliers(time_list, 2*average)
-
         graph(time_list)
         time_list_list.append(time_list)
         
@@ -233,6 +241,6 @@ def getResults(job_id) :
     print(result.data.meas.get_counts())
 
 
-#execute()
+execute()
 #job_id = calculate()
-getResults("czq56gtd8drg008gf0yg")
+#getResults("czq56gtd8drg008gf0yg")
