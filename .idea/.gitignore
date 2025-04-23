@@ -6,3 +6,53 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+
+# === Environnement virtuel ===
+q_env/
+.venv/
+env/
+venv/
+
+# === Python standard ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# === Éditeurs & IDEs ===
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# === OS spécifiques ===
+.DS_Store
+Thumbs.db
+
+# === Fichiers temporaires ===
+*.log
+*.tmp
+*.swp
+*.bak
+
+# === Qiskit / données ===
+*.pkl
+*.npz
+data/
+noise_models/
+*.qasm
+*.qasm.json
+
+# === Notebooks inutiles ou temporaires ===
+.ipynb_checkpoints/
+
+
+# === 
+*.pem
+*.crt
+*.key
