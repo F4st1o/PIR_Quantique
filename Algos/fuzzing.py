@@ -19,8 +19,6 @@ import time
 from datetime import datetime
 
 
-TOKEN = "5beaf0819b6a2df9aa41c94a0e65b3d8520c89c158823545dcb70710b4ecb6efd5d524de45d2b58a1172d3675407c53edad235f46d861cec36b24bba12671853"
-
 # QiskitRuntimeService.save_account(token=TOKEN, overwrite=True, channel="ibm_quantum")
 
 # Ignoring gates with parameters for now
@@ -224,8 +222,6 @@ def calculate() :
     return job.job_id()
 
 
-
-
 def getResults(job_id) :
     service = QiskitRuntimeService()
 
@@ -242,3 +238,4 @@ if __name__ == "__main__":
     execute()
     #job_id = calculate()
     #getResults("czq56gtd8drg008gf0yg")
+
