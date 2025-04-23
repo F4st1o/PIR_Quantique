@@ -157,7 +157,6 @@ def execute(repetition = 100, save = True) :
     time_list_list = []
     for i in range(len(circuits)) :
         qc, date = circuits[i]
-
         
         simulator = AerSimulator()
         qc = transpile(qc, simulator, optimization_level=0)
@@ -226,8 +225,6 @@ def calculate() :
 
 
 
-    
-
 
 def getResults(job_id) :
     service = QiskitRuntimeService()
@@ -241,6 +238,7 @@ def getResults(job_id) :
     print(result.data.meas.get_counts())
 
 
-execute()
-#job_id = calculate()
-#getResults("czq56gtd8drg008gf0yg")
+if __name__ == "__main__":
+    execute()
+    #job_id = calculate()
+    #getResults("czq56gtd8drg008gf0yg")
