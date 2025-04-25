@@ -8,7 +8,7 @@ from qiskit_ibm_runtime import QiskitRuntimeService, EstimatorV2
 from qiskit_ibm_runtime.noise_learner import NoiseLearner
 from qiskit_ibm_runtime.options import (NoiseLearnerOptions,ResilienceOptionsV2,EstimatorOptions,)
 from datetime import datetime
-
+import pickle
 import matplotlib.pyplot as plt
 
 My_Key = "5beaf0819b6a2df9aa41c94a0e65b3d8520c89c158823545dcb70710b4ecb6efd5d524de45d2b58a1172d3675407c53edad235f46d861cec36b24bba12671853"
@@ -30,17 +30,24 @@ def get_noise_model(backend) :
     noise_model = NoiseModel.from_backend(backend)
 
     # Sauvegarder le modèle de bruit localement
-    import pickle
-    with open("./noise_models/"+ backend.name +"_"+ str(when.date()).replace("-","_") + "_noise.pkl", "wb") as f:
+    with open("noise_models/"+ backend.name +"_"+ str(when.date()).replace("-","_") + "_noise.pkl", "wb") as f:
         pickle.dump(noise_model, f)
 
-def get_noise_models() :
+
+
+# fonction pour récupérer les noise_models disponiples des calculateurs sur IBM quantum au moment de l'execution de cette fonction  ----------------------------------------
+def save_noise_models() :
     backends = get_noise_models_calculators()
     for backend in backends:
         get_noise_model(backend)
 
+# fonction qui permet de recupérer le noise_model sauvegarder ------------------------------------------------------------
+def load_noise_model(file_name) :
+    with open("noise_models/" + file_name, "rb") as f:
+        return pickle.load(f)
 
-def get_sim_from_noise(qc, my_backend) :
+# fonction pour recuperer simulateur a partir nom du noise model ---------------------------------
+def get_sim_from_noise(qc, file_name) :
     # Backends physiques != simulés (aer, qasm, ...) :
     # ibmq_manila : un processeur quantique à 5 qubits
     # ibmq_jakarta : un processeur quantique à 7 qubits
@@ -53,17 +60,26 @@ def get_sim_from_noise(qc, my_backend) :
     # -> Connexion via ibm_cloud (Accès avec compte IBM Cloud pour du cloud)
     ################################################################################
 
-    import pickle
-    with open(my_backend + "_noise.pkl", "rb") as f:
-        my_noise_model = pickle.load(f)
-
-    qc_transpiled = transpile(qc, backend=my_backend) # traduit le circuit en utilisant uniquement les portes natives du backend choisi
+    my_noise_model = load_noise_model(file_name)
     simulator = AerSimulator(noise_model=my_noise_model)
-
     return simulator
     # result = simulator.run(qc_transpiled).result()
 
-def conc_res(qc) :
+
+# fonction qui permet de sauvegarder un qc ------------------------------------------------------------
+def save_qc(qc) :
+    date = datetime.now().strftime("%Y-%m-%d %H-%M-%S-%f")[:-3]
+    with open("data/circuit/" + date + "_qc.pkl", "wb") as f:
+        pickle.dump(qc, f)
+
+
+# fonction qui permet de recupérer le qc sauvegarder ------------------------------------------------------------
+def load_qc(file_name) :
+    with open("data/" + file_name, "rb") as f:
+        return pickle.load(f)
+
+
+"""def conc_res(qc) :
     res = []
 
     result1 = AerSimulator().run(qc).result()
@@ -99,5 +115,16 @@ def print_res_by_sim(nom_sim, qc) :
     
     plt.show()
 
+1-
+save_noise_models()
 
-get_noise_models()
+2-
+qc = QuantumCircuit(2, 2)
+qc.h(0)
+qc.cx(0, 1)
+qc.measure([0, 1], [0, 1])
+save_qc(qc)
+
+3-
+qc = load_qc("2025-04-25 11-42-00-577_qc.pkl")
+print(qc.draw())"""
