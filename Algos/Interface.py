@@ -9,10 +9,6 @@ from qiskit_ibm_runtime.noise_learner import NoiseLearner
 from qiskit_ibm_runtime.options import (NoiseLearnerOptions,ResilienceOptionsV2,EstimatorOptions,)
 from datetime import datetime
 
-#from qiskit_ibm_runtime import QiskitRuntimeService
-#from qiskit_ibm_provider import IBMProvider
-#from qiskit_ibm_provider.least_busy import least_busy
-#from qiskit import IBMQ
 import matplotlib.pyplot as plt
 
 My_Key = "5beaf0819b6a2df9aa41c94a0e65b3d8520c89c158823545dcb70710b4ecb6efd5d524de45d2b58a1172d3675407c53edad235f46d861cec36b24bba12671853"
@@ -26,33 +22,6 @@ def get_noise_models_calculators() :
     # Lister les backend physiques (ordinateurs quantiques)
     service = QiskitRuntimeService()
     return service.backends(simulator=False, operational=True, min_num_qubits=10)
-    
-
-
-# def print_noise_model_calculators() :
-#     backends = get_noise_models_calculators()
-#     file = open("noise_models.txt", "w")
-
-#     for backend in backends:
-#         props = backend.properties()
-#         file.write("Backend:"  + backend.name + "\n")
-#         list = [str(props.t1(q)) for q in range(backend.configuration().n_qubits)]
-#         str1 = "["+ ", ".join(list) + "]"
-#         file.write("T1 (temps de decoherence) des qubits:"+ str1 + "\n")
-#         list = [ str(props.t2(q)) for q in range(backend.configuration().n_qubits)]
-#         str1 = "["+ ", ".join(list) + "]"
-#         file.write("T2 (temps de coherence) des qubits: " + str1 + "\n")
-#         file.write("-" * 40 + "\n")        
-#         """
-#         print(f"Backend: {backend.name}")
-#         print("T1 (temps de decoherence) des qubits:", [props.t1(q) for q in range(backend.configuration().n_qubits)])
-#         print("T2 (temps de coherence) des qubits:", [props.t2(q) for q in range(backend.configuration().n_qubits)])
-#         """
-#         #print("Erreurs de porte:", [props.gate_error('cx', [i, j]) for i in range(backend.configuration().n_qubits) for j in range(i + 1, backend.configuration().n_qubits)])
-#         print("-" * 40)
-    
-
-
 
 def get_noise_model(backend) :
     when = datetime.now()
@@ -62,15 +31,13 @@ def get_noise_model(backend) :
 
     # Sauvegarder le modèle de bruit localement
     import pickle
-    with open(backend.name +"_"+ str(when.date()).replace("-","_") + "_noise.pkl", "wb") as f:
+    with open("./noise_models/"+ backend.name +"_"+ str(when.date()).replace("-","_") + "_noise.pkl", "wb") as f:
         pickle.dump(noise_model, f)
-
 
 def get_noise_models() :
     backends = get_noise_models_calculators()
     for backend in backends:
         get_noise_model(backend)
-
 
 
 def get_sim_from_noise(qc, my_backend) :
@@ -132,10 +99,5 @@ def print_res_by_sim(nom_sim, qc) :
     
     plt.show()
 
-##################################################################################################################################################
-#
-# Many simulators : AerSimulator, StatevectorSimulator, UnitarySimulator, DensityMatrixSimulator, StabilizerSimulator, MatrixProductStateSimulator
-# 
-##################################################################################################################################################
 
 get_noise_models()
