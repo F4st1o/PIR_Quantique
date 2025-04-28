@@ -241,6 +241,7 @@ def getResults(job_id) :
     print(result.data.meas.get_counts())
 
 
-execute()
-#job_id = calculate()
-#getResults("czq56gtd8drg008gf0yg")
+if __name__ == "__main__":
+    execute()
+    #job_id = calculate()
+    #getResults("czq56gtd8drg008gf0yg")

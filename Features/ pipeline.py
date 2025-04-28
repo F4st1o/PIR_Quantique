@@ -25,7 +25,10 @@ from count_features import shannon_entropy, emd_uniform, classical_fidelity
 from adder_features import generate_xor_adder_circuit, analyze_noise_on_adder
 from hardware_features import get_backend_error_metrics 
 
-
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Algos')))
+from fuzzing import fuzzing
+from tokens import get_token_for
 def list_physical_backends(
     token: str,
     min_qubits: int = 5
@@ -76,11 +79,10 @@ def get_noise_model(
 def extract_features(
     qc: QuantumCircuit,
     shots: int = 1024,
-    noise_model: Optional[NoiseModel] = None,
+    noise_model: Optional[NoiseModel] = get_noise_model('ibmq_sherbrooke', get_token_for('Baptiste')),
     ideal_counts: Optional[Dict[str, int]] = None,
     backend_name: Optional[str] = None,
-    token: Optional[str] = None
-) -> Dict[str, Any]:
+    token: Optional[str] =None) -> Dict[str, Any]:
     """
     Extrait un dictionnaire de features pour un circuit qc.
 
@@ -121,6 +123,8 @@ def extract_features(
     if noise_model:
         adder_stats = analyze_noise_on_adder(qc, noise_model, shots=shots)
         features.update(adder_stats)
+        print(f"Adder features: {adder_stats}")
+
     else:
         features.update({
             'mean_ideal': None,
@@ -132,6 +136,8 @@ def extract_features(
     # 5) Hardware features
     if backend_name and token:
         hw_feats = get_backend_error_metrics(backend_name, token)
+        print(f"Hardware features: {hw_feats}")
+
         features.update(hw_feats)
 
     return features
@@ -151,18 +157,17 @@ if __name__ == '__main__':
     noise_model = NoiseModel.from_backend(service.backend(backend_name))
 
     # 2) Générer plusieurs circuits de test
-    circuits = []
-    for _ in range(1):
-        qc = QuantumCircuit(3, 3)
-        qc.h(range(3))
-        qc.cx(0, 1)
-        qc.cx(1, 2)
-        qc.measure_all()
-        circuits.append(qc)
+    circuits = fuzzing(
+        20,          # Nombre de circuits à générer
+        4,            # Nombre de qubits par circuit
+        10,            # Nombre de portes par circuit
+        )    # Initialisation aléatoire des qubits
+
+ 
     # 3) Extraire features pour idéal et bruité
     all_features = []
     for scenario, nm in [('ideal', None), ('noisy', noise_model)]:
-        for qc in circuits:
+        for qc, _ in circuits:
             feats = extract_features(
                 qc,
                 shots=512,
@@ -195,7 +200,7 @@ if __name__ == '__main__':
 
  
     # Plot histograms for some features
-    features_to_plot = ['entropy_shannon', 'emd_uniform', 'variance_counts']
+    features_to_plot = ['var_ideal','var_noisy', 'variance_counts' ]
     for feature in features_to_plot:
         plt.figure()
         for scenario, grp in df.groupby('scenario'):
@@ -216,7 +221,7 @@ if __name__ == '__main__':
         plt.show()
 
     # Exemple d'importances
-    example_importances = {'time_real':0.3, 'variance_counts':0.5, 'entropy_shannon':0.2}
-    #plot_feature_importance(example_importances)
+    example_importances = {'var_noisy':0.3, 'variance_counts':0.5, 'entropy_shannon':0.2}
+    plot_feature_importance(example_importances)
 
 
