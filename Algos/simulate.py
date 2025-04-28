@@ -10,24 +10,30 @@ import datetime
 
 # Configuration des arguments
 parser = argparse.ArgumentParser(description="Simulate quantum circuits with optional parameters.")
-parser.add_argument("--nb_circuits", type=int, default=1, help="Nombre de circuits à générer.")
-parser.add_argument("--nb_qbits", type=int, default=5, help="Nombre de qubits par circuit.")
-parser.add_argument("--nb_gates", type=int, default=50, help="Nombre de portes par circuit.")
+parser.add_argument("--nb_circuits", type=int, default=3, help="Nombre de circuits à générer.")
+parser.add_argument("--nb_qbits", type=int, default=20, help="Nombre de qubits par circuit.")
+parser.add_argument("--nb_gates", type=int, default=200, help="Nombre de portes par circuit.")
 parser.add_argument("--shots", type=int, default=2**15, help="Nombre de répétitions pour chaque circuit.")
-parser.add_argument("--backend", type=str, default="ibm_brisbane", help="Nom du backend (ibm_brisbane ou ibm_sherbrooke).")
+parser.add_argument("--backend", type=str, default="ibm_sherbrooke", help="Nom du backend (ibm_brisbane ou ibm_sherbrooke).")
 parser.add_argument("--calculate", action="store_true", help="Envoie la requête sur le calculateur.")
 args = parser.parse_args()
 
 
-circuits = fuzzing.fuzzing(args.nb_circuits, args.nb_qbits, args.nb_gates, save=False, verbose=False, random_init=True)
 
+# Only done once per machine
+TOKEN = "5beaf0819b6a2df9aa41c94a0e65b3d8520c89c158823545dcb70710b4ecb6efd5d524de45d2b58a1172d3675407c53edad235f46d861cec36b24bba12671853"
+QiskitRuntimeService.save_account(token=TOKEN, overwrite=True, channel="ibm_quantum")
+
+
+
+circuits = fuzzing.fuzzing(args.nb_circuits, args.nb_qbits, args.nb_gates, save=False, verbose=False, random_init=True)
  
 # Load simulator on backend
 service = QiskitRuntimeService()
 real_backend = service.backend(args.backend)
 simu_backend = AerSimulator.from_backend(real_backend)
 
- 
+
 
 def simulate() :
     for qc, date in circuits :
@@ -102,17 +108,18 @@ def calculate() :
 
             start = time.perf_counter() #-----------------
 
-            local_job = sampler.run([isa_qc], shots=args.shots)
+            job = sampler.run([isa_qc], shots=args.shots)
 
-            job = service.job(local_job.job_id())
+            job = service.job(job.job_id())
 
-            print(job.status())
-            print(job.metrics())
+            with open('job_id_list.txt', 'a') as fichier:
+                fichier.write(job.job_id() + "\n")
 
             # Waiting for the job to finish
             while not job.in_final_state() :
                 print(job.status())
                 time.sleep(0.1)
+                job = service.job(job.job_id())
 
             end = time.perf_counter() #-----------------
 
