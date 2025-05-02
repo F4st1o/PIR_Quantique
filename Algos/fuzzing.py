@@ -83,7 +83,7 @@ def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save=False, verbose 
         if save : fichier.close()
 
 
-    print("\nAll circuits generated\n")
+    print("All circuits generated\n")
     return circuits
 
 
