@@ -8,56 +8,45 @@ Pipeline unique pour extraire toutes les features d'un circuit quantique :
  - métriques d'état (state fidelity)
  - métriques hardware (T1, T2, gate/readout errors)
 """
+
 import os
 import pickle
 import time
 from typing import Dict, Any, Optional
+
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 from qiskit_aer.noise import NoiseModel
 from qiskit_ibm_runtime import QiskitRuntimeService
 
-# Import des modules de features
 from static_features import static_metrics
 from execution_features import run_timing
-from count_features import shannon_entropy, emd_uniform, classical_fidelity
-from adder_features import generate_xor_adder_circuit, analyze_noise_on_adder
-from hardware_features import get_backend_error_metrics 
+from count_features import *
+# from hardware_features import get_backend_error_metrics
 
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Algos')))
 from fuzzing import fuzzing
 from tokens import get_token_for
-def list_physical_backends(
-    token: str,
-    min_qubits: int = 5
-) -> list:
+
+
+def list_physical_backends(token: str, min_qubits: int = 5) -> list:
     """
     Retourne la liste des QPUs IBM Quantum accessibles (opérationnels, non simulateurs)
     et ayant au moins `min_qubits` qubits.
-
-    token: votre jeton IBM Quantum.
-    min_qubits: filtre sur le nombre minimal de qubits.
     """
     service = QiskitRuntimeService(channel="ibm_quantum", token=token)
-    return service.backends(
-        simulator=False,
-        operational=True,
-        min_num_qubits=min_qubits
-    )
+    return service.backends(simulator=False, operational=True, min_num_qubits=min_qubits)
 
 
-def get_noise_model(
-    backend_name: str,
-    token: str,
-    cache_dir: str = "noise_models"
-) -> NoiseModel:
+def get_noise_model(backend_name: str, token: str, cache_dir: str = "noise_models") -> NoiseModel:
     """
     Récupère et met en cache (pickle) le NoiseModel d'un QPU IBM.
-    - backend_name: nom du QPU (ex. 'ibmq_jakarta')
-    - token: jeton IBM Quantum
-    - cache_dir: dossier local pour stocker les modèles
     """
     os.makedirs(cache_dir, exist_ok=True)
     now = time.strftime("%Y%m%d")
@@ -84,93 +73,111 @@ def extract_features(
     backend_name: Optional[str] = None,
     token: Optional[str] =None) -> Dict[str, Any]:
     """
-    Extrait un dictionnaire de features pour un circuit qc.
-
-    Params:
-      qc           : QuantumCircuit à analyser.
-      shots        : nombre de tirages pour les counts.
-      noise_model  : NoiseModel pour la simulation bruitée (facultatif).
-      ideal_counts : distribution idéale pour calculer classical_fidelity (facultatif).
-      backend_name : nom du backend IBM pour features hardware (facultatif).
-      token        : IBM Quantum token si backend_name fourni.
-
-    Retour:
-      Dict contenant toutes les features statiques, temporelles, counts,
-      state fidelity et données hardware (si applicables).
+    Extrait un dictionnaire de features pour un circuit quantique.
     """
     features: Dict[str, Any] = {}
 
-    # 1) Static features
+    # Static features
     features.update(static_metrics(qc))
 
-    # 2) Temporal features on simulator (ideal or noisy)
+    # Temporal and Count-based features
     sim = AerSimulator(noise_model=noise_model) if noise_model else AerSimulator()
-    timing = run_timing(qc, sim, shots=shots)
+    tq = transpile(qc, sim, optimization_level=0)
+    timing, counts = run_timing(tq, sim, shots=shots)
     features.update(timing)
 
-    # 3) Count-based features
-    tq = transpile(qc, sim, optimization_level=0)
-    job = sim.run(tq, shots=shots).result()
-    counts = job.get_counts()
-
+    # Update features
     features['entropy_shannon'] = shannon_entropy(counts)
-    features['emd_uniform']     = emd_uniform(counts)
-    freqs = np.array(list(counts.values()), dtype=float)
-    features['variance_counts'] = float(freqs.var())
+    features['emd_uniform'] = emd_uniform(counts)
+    features['variance_counts'] = variance_counts(counts)
     features['classical_fidelity'] = classical_fidelity(counts, ideal_counts) if ideal_counts else None
-
-        # 4) Adder-based features (XOR adder noise stats)
-    if noise_model:
-        adder_stats = analyze_noise_on_adder(qc, noise_model, shots=shots)
-        features.update(adder_stats)
-        print(f"Adder features: {adder_stats}")
-
-    else:
-        features.update({
-            'mean_ideal': None,
-            'var_ideal': None,
-            'mean_noisy': None,
-            'var_noisy': None
-        })
-
-    # 5) Hardware features
-    if backend_name and token:
-        hw_feats = get_backend_error_metrics(backend_name, token)
-        print(f"Hardware features: {hw_feats}")
-
-        features.update(hw_feats)
 
     return features
 
 
-# Exemple d'utilisation
-if __name__ == '__main__':
-    from tokens import get_token_for
-    from qiskit_aer.noise import NoiseModel
-    import matplotlib.pyplot as plt
-    import pandas as pd
+def plot_features_scatter(data, x, y, label_key):
+    """
+    Trace un scatter plot de deux features, coloré par scénario.
+    """
+    df = pd.DataFrame(data)
+    for cat, grp in df.groupby(label_key):
+        plt.scatter(grp[x], grp[y], label=cat)
 
-    # 1) Préparer le token et backends
+    plt.xlabel(x)
+    plt.ylabel(y)
+    plt.title(f"{y} vs {x} par scénario")
+    plt.legend()
+    plt.show()
+
+
+def plot_feature_distributions(df, features_to_plot):
+    """
+    Trace les distributions des features pour chaque scénario.
+    """
+    for feature in features_to_plot:
+        plt.figure(figsize=(8, 5))
+        for scenario, grp in df.groupby('scenario'):
+            sns.kdeplot(grp[feature].dropna(), label=scenario, fill=True, linewidth=2, alpha=0.4)
+
+        plt.title(f'Distribution de {feature}', fontsize=14)
+        plt.xlabel(feature, fontsize=12)
+        plt.ylabel('Densité', fontsize=12)
+        plt.legend(title='Scénario')
+        plt.grid(True, linestyle='--', alpha=0.6)
+        plt.tight_layout()
+        plt.show()
+
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+def plot_time_features(df, real_time_col):
+    """
+    Affiche une courbe du temps réel par scénario avec une meilleure lisibilité.
+    """
+    plt.figure(figsize=(10, 6))
+    sns.lineplot(
+        data=df,
+        x=df.index,
+        y=real_time_col,
+        hue="scenario",
+        style="scenario",
+        markers=True,
+        dashes=False,
+        palette="tab10"
+    )
+
+    plt.title(f'Temps réel par scénario', fontsize=14)
+    plt.xlabel('Index du circuit', fontsize=12)
+    plt.ylabel(real_time_col, fontsize=12)
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.legend(title='Scénario')
+    plt.tight_layout()
+    plt.show()
+
+
+
+if __name__ == '__main__':
+    print("Préparer le token et backends")
     token = get_token_for('Baptiste')
     service = QiskitRuntimeService(channel='ibm_quantum', token=token)
     backend_name = service.least_busy(simulator=False).name
-    noise_model = NoiseModel.from_backend(service.backend(backend_name))
+    backend = service.backend(backend_name)
+    noise_model = NoiseModel.from_backend(backend)
 
-    # 2) Générer plusieurs circuits de test
-    circuits = fuzzing(
-        20,          # Nombre de circuits à générer
-        4,            # Nombre de qubits par circuit
-        10,            # Nombre de portes par circuit
-        )    # Initialisation aléatoire des qubits
+    print(f"Backend sélectionné : {backend_name}\n")
 
- 
-    # 3) Extraire features pour idéal et bruité
+    # Générer des circuits
+    circuits = fuzzing(30, 4, 10)
+
+    # Extraire les features
     all_features = []
     for scenario, nm in [('ideal', None), ('noisy', noise_model)]:
         for qc, _ in circuits:
+            print(f"Traitement du circuit {qc.name} avec le scénario {scenario}")
             feats = extract_features(
                 qc,
-                shots=512,
+                shots=256,
                 noise_model=nm,
                 ideal_counts=None,
                 backend_name=backend_name,
@@ -179,49 +186,18 @@ if __name__ == '__main__':
             feats['scenario'] = scenario
             all_features.append(feats)
 
-    # 4) Plot scatter de deux features coloré par scénario
-    def plot_features_scatter(data, x, y, label_key):
-        df = pd.DataFrame(data)
-        for cat, grp in df.groupby(label_key):
-            plt.scatter(grp[x], grp[y], label=cat)
-        plt.xlabel(x)
-        plt.ylabel(y)
-        plt.title(f"{y} vs {x} par scénario")
-        plt.legend()
-        plt.show()
-
+    print("\nVérifier les features extraites")
     if all_features:
-        print(all_features[0].keys())  # Print keys of the first dictionary in the list
+        print(list(all_features[0].keys()))
     else:
-        print("all_features is empty.")
-    
-    # Convert all_features to a DataFrame for easier plotting
+        print("all_features est vide.")
+
+    # Convertir en DataFrame
     df = pd.DataFrame(all_features)
 
- 
-    # Plot histograms for some features
-    features_to_plot = ['var_ideal','var_noisy', 'variance_counts' ]
-    for feature in features_to_plot:
-        plt.figure()
-        for scenario, grp in df.groupby('scenario'):
-            grp[feature].plot(kind='hist', alpha=0.5, label=scenario, bins=20)
-        plt.title(f"Histogram of {feature}")
-        plt.xlabel(feature)
-        plt.ylabel("Frequency")
-        plt.legend()
-        plt.show()
-
-    # 5) Plot importance des features (exemple fictif)
-    def plot_feature_importance(importances: Dict[str, float]):
-        plt.figure(figsize=(6,4))
-        plt.bar(importances.keys(), importances.values())
-        plt.xticks(rotation=45, ha='right')
-        plt.title('Importance des features')
-        plt.tight_layout()
-        plt.show()
-
-    # Exemple d'importances
-    example_importances = {'var_noisy':0.3, 'variance_counts':0.5, 'entropy_shannon':0.2}
-    plot_feature_importance(example_importances)
+    # Tracer les distributions des features
+    features_to_plot = []  # ['shannon_entropy', 'emd_uniform', 'variance_counts', 'classical_fidelity']
+    plot_feature_distributions(df, features_to_plot)
+    plot_time_features(df, 'time_real_ms')
 
 

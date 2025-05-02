@@ -21,7 +21,7 @@ from datetime import datetime
 
 TOKEN = "5beaf0819b6a2df9aa41c94a0e65b3d8520c89c158823545dcb70710b4ecb6efd5d524de45d2b58a1172d3675407c53edad235f46d861cec36b24bba12671853"
 
-# QiskitRuntimeService.save_account(token=TOKEN, overwrite=True, channel="ibm_quantum")
+QiskitRuntimeService.save_account(token=TOKEN, overwrite=True, channel="ibm_quantum")
 
 # Ignoring gates with parameters for now
 gates = [gate for gate in get_standard_gate_name_mapping().values() if gate.params == [] and gate.num_clbits == 0]
@@ -83,7 +83,7 @@ def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save=False, verbose 
         if save : fichier.close()
 
 
-    print("\nAll circuits generated\n")
+    print("All circuits generated\n")
     return circuits
 
 

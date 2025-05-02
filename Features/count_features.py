@@ -20,11 +20,23 @@ def emd_uniform(counts: Dict[str, int]) -> float:
     Calcule la distance de type Earth Mover's Distance (Wasserstein-1)
     entre la distribution observée et la distribution uniforme.
     """
-    # Trier pour aligner bins
-    freqs = np.array(sorted(counts.values()), dtype=float)
-    obs = freqs / freqs.sum()
-    unif = np.ones_like(obs) / len(obs)
-    return float(wasserstein_distance(np.arange(len(obs)), np.arange(len(obs)), obs, unif))
+    if not counts:
+        return np.nan  # ou 0.0 selon ton besoin
+
+    
+    count_values = np.array(list(counts.values()), dtype=float)
+    unif_distribution = np.ones_like(count_values) / len(count_values)
+
+    return wasserstein_distance(count_values, unif_distribution)
+
+
+def variance_counts(counts: Dict[str, int]) -> float:
+    """
+    Calcule la variance des counts.
+    """
+    freqs = np.array(list(counts.values()), dtype=float)
+    ps = freqs / freqs.sum()
+    return float(ps.var())
 
 
 def classical_fidelity(

@@ -9,7 +9,7 @@ from static_features import static_metrics
 def run_timing(
     qc: QuantumCircuit,
     simulator,
-    shots: int = 1024
+    shots: int = 256
 ) -> Dict[str, float]:
     """
     Transpile le circuit pour le simulateur donné, exécute et mesure :
@@ -21,7 +21,7 @@ def run_timing(
 
     # Exécution et mesure du temps réel
     start = time.perf_counter()
-    job = simulator.run(tq, shots=shots).result()
+    job = simulator.run(tq, shots=shots)
     end = time.perf_counter()
 
     # Calcul des métriques
@@ -29,10 +29,11 @@ def run_timing(
     time_sim = getattr(job, "time_taken", None)
     time_sim_ms = (time_sim * 1000) if time_sim is not None else None
 
-    return {
+    timing = {
         "time_real_ms": time_real_ms,
         "time_sim_ms": time_sim_ms
     }
+    return (timing, job.result().get_counts(qc))
 
 
 # Exemple d'utilisation

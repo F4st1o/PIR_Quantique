@@ -12,34 +12,21 @@ import pickle
 import os
 from datetime import datetime
 
-# ----------------------------------------------------------------------------
-# 1) Lister les calculateurs physiques disponibles
-# ----------------------------------------------------------------------------
+from tokens import get_token_for
 
-def list_physical_backends(
-    token: str,
-    min_qubits: int = 5
-) -> List[Any]:
-    """
-    Retourne la liste des QPUs IBM Quantum accessibles (opérationnels, non simulateurs)
-    et ayant au moins `min_qubits` qubits.
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../Algos')))
 
-    token: votre jeton IBM Quantum.
-    min_qubits: filtre sur le nombre minimal de qubits.
-    """
-    service = QiskitRuntimeService(channel="ibm_quantum", token=token)
-    return service.backends(
-        simulator=False,
-        operational=True,
-        min_num_qubits=min_qubits
-    )
+from fuzzing import fuzzing
+from simulate import calculate
+
 
 # ----------------------------------------------------------------------------
 # 2) Charger et mettre en cache un modèle de bruit pour un QPU
 # ----------------------------------------------------------------------------
 
 def get_noise_model(
-    backend_name: str,
+    backend,
     token: str,
     cache_dir: str = "noise_models"
 ) -> NoiseModel:
@@ -51,14 +38,12 @@ def get_noise_model(
     """
     os.makedirs(cache_dir, exist_ok=True)
     now = datetime.now().strftime("%Y%m%d")
-    cache_file = os.path.join(cache_dir, f"{backend_name}_{now}_noise.pkl")
+    cache_file = os.path.join(cache_dir, f"{backend.name}_{now}_noise.pkl")
 
     if os.path.exists(cache_file):
         with open(cache_file, "rb") as f:
             return pickle.load(f)
 
-    service = QiskitRuntimeService(channel="ibm_quantum", token=token)
-    backend = service.backend(backend_name)
     model = NoiseModel.from_backend(backend)
 
     with open(cache_file, "wb") as f:
@@ -70,7 +55,7 @@ def get_noise_model(
 # ----------------------------------------------------------------------------
 
 def get_backend_error_metrics(
-    backend_name: str,
+    backend_name,
     token: str
 ) -> Dict[str, float]:
     """
@@ -80,8 +65,6 @@ def get_backend_error_metrics(
       - erreur de porte moyenne
       - erreur de mesure moyenne
     """
-    service = QiskitRuntimeService(channel="ibm_quantum", token=token)
-    backend = service.backend(backend_name)
     props = backend.properties()
 
     t1_list = []
@@ -116,21 +99,27 @@ def get_backend_error_metrics(
 # Exemple d'utilisation
 # ----------------------------------------------------------------------------
 if __name__ == '__main__':
-    from tokens import get_token_for
-
     token = get_token_for('Baptiste')
+
+    service = QiskitRuntimeService(channel="ibm_quantum", token=token)
+
     # 1) Lister les QPUs
-    qpus = list_physical_backends(token, min_qubits=5)
+    qpus = service.backends(simulator=False, operational=True, min_num_qubits=5)
     print("Available QPUs:", [b.name for b in qpus])
 
     # Choisir le moins occupé
-    backend_name = qpus[0].name
-    print("Selected backend:", backend_name)
+    backend = service.backend(qpus[0].name)
+    print("Selected backend:", backend.name)
 
     # 2) Charger le modèle de bruit
-    nm = get_noise_model(backend_name, token)
-    print("NoiseModel loaded for", backend_name)
+    nm = get_noise_model(backend, token)
+    print("NoiseModel loaded for", backend.name)
 
     # 3) Extraire les métriques hardware
-    hw_metrics = get_backend_error_metrics(backend_name, token)
+    hw_metrics = get_backend_error_metrics(backend, token)
     print("Hardware error metrics:", hw_metrics)
+
+    # 4) Exécuter un circuit de test
+    circuits = fuzzing(1, 5, 10)
+    calculate(circuits, service, backend, 512)
+
