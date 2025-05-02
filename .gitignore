@@ -60,3 +60,7 @@ noise_models/
 *.pem
 *.crt
 *.key
+
+
+__pycache__/
+*.pyc
