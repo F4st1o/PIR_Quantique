@@ -93,7 +93,9 @@ def calculate(circuits, service, real_backend, shots) :
                 print(job.status())
                 time.sleep(0.1)
                 job = service.job(job.job_id())
+                job = service.job(job.job_id())
 
+            end = time.perf_counter() #-----------------
             end = time.perf_counter() #-----------------
 
             job = service.job(job.job_id())
@@ -102,11 +104,18 @@ def calculate(circuits, service, real_backend, shots) :
             if job.status() == 'ERROR' :
                 print(job.error_message())
                 break
+            # If the simulation failed
+            if job.status() == 'ERROR' :
+                print(job.error_message())
+                break
 
+            metrics = job.metrics()
             metrics = job.metrics()
 
             print(job.status())
+            print(job.status())
 
+            print(f"\nMetrics :\n{metrics}")
             print(f"\nMetrics :\n{metrics}")
 
             datetime.str
@@ -115,8 +124,17 @@ def calculate(circuits, service, real_backend, shots) :
             print(duration)
             simul_time = duration.microseconds
             print(f"Duration: {simul_time} µs")
+            datetime.str
+
+            duration = datetime.datetime.fromisoformat(metrics['timestamps']['finished'].replace("Z", "+00:00")) - datetime.datetime.fromisoformat(metrics['timestamps']['running'].replace("Z", "+00:00"))  # Format de date incompatible lors de l'exécution sur le calculateur
+            print(duration)
+            simul_time = duration.microseconds
+            print(f"Duration: {simul_time} µs")
 
 
+            
+            total_exec_time += (end - start)
+            total_simul_time += simul_time
             
             total_exec_time += (end - start)
             total_simul_time += simul_time
