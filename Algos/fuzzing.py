@@ -40,8 +40,26 @@ def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save=False, verbose 
     nb_circuits : int
         Number of circuits to generate
 
-    nb_qQiskitRuntimeService()
-        A list of QuantumCircuit objects
+    nb_qbits : int
+        Number of Qbits in the circuit
+
+    nb_gates : int
+        Number of gates in the circuit
+
+    save : default False
+        Save the circuits in a file
+    
+    verbose : default False
+        Print the circuits in the console
+
+    random_init : default False
+        Apply a Hadamard gate to all Qbits at the beginning of the circuit
+    
+        
+    Returns
+    -------
+    list[QuantumCircuit, str]
+        List of circuits with their creation date   
     """
 
     print(f"Generating {nb_circuits} circuits with {nb_qbits} Qbits and {nb_gates} gates")
@@ -243,5 +261,5 @@ def getResults(job_id) :
 
 if __name__ == "__main__":
     execute()
-    #job_id = calculate()
-    #getResults("czq56gtd8drg008gf0yg")
+    # job_id = calculate()
+    # getResults("czq56gtd8drg008gf0yg")

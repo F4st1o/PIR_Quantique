@@ -128,8 +128,6 @@ def plot_feature_distributions(df, features_to_plot):
         plt.show()
 
 
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 def plot_time_features(df, real_time_col):
     """

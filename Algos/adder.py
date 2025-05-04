@@ -1,32 +1,37 @@
-from qiskit import QuantumCircuit, transpile
+from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
-from qiskit.circuit.library import get_standard_gate_name_mapping
 from qiskit.visualization import plot_histogram
-from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler
-
-from qiskit_ibm_runtime import Options
-# Pour affichage et outliers
-#from utils import remove_outliers, graph, graph3d
-
-import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from scipy.stats import norm, gaussian_kde
-
-from random import sample, choice
-
-import time
-from datetime import datetime
 
 
-def adder(nb_qbits):
-    '''
-    Additionne 2 nombres de nb_qbits
-    '''
+def create(nb_qbits:int, ignore_carry=False, draw=False) -> QuantumCircuit :
+    """
+    Creates a quantum circuit that adds two numbers of `nb_qbits` Qbits.
+
+    Parameters
+    ----------
+    nb_qbits : int
+        Number of qubits to add
+
+    ignore_carry : bool, optional
+        True -> pyramid-shaped distribution
+
+        False -> uniform distribution.
+
+    draw : bool, optional
+        If True, displays the circuit
+
+        
+    Returns
+    -------
+    qc : QuantumCircuit
+        Quantum circuit of the adder
+    """
 
     n = nb_qbits
-    qc = QuantumCircuit(3*n+1)
+    add_carry = 0 if ignore_carry else 1
 
+    qc = QuantumCircuit(3*n+1, n+add_carry)
     qc.h(range(2*n))
 
     for i in (range(n)) :
@@ -37,21 +42,20 @@ def adder(nb_qbits):
         qc.ccx(i+n, i+2*n, i+2*n+1)
         qc.cx(i+n, i+2*n)
 
-        qc.cx(i, i+n)
+        qc.cx(i, i+n)  # to restore the state of the second Qbit
         
     
-    qc.measure_all()
-   # qc.draw('mpl')
+    qc.measure(range(2*n, 3*n+add_carry), range(n+add_carry))
+    if draw : qc.draw('mpl')
     return qc
 
 
 
 if __name__ == "__main__":
-    # Récupérer token et NoiseModel pour un QPU IBM
-    circuit = adder(2)
-    result = AerSimulator().run(circuit).result()
+    circuit = create(1, ignore_carry=False)
+
+    result = AerSimulator().run(circuit, shots=2**20).result()
     statistics = result.get_counts()
     print(statistics)
     plot_histogram(statistics)
     plt.show()
-    
