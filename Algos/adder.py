@@ -52,7 +52,7 @@ def create(nb_qbits:int, ignore_carry=False, draw=False) -> QuantumCircuit :
 
 
 if __name__ == "__main__":
-    circuit = create(1, ignore_carry=False)
+    circuit = create(4, ignore_carry=False)
 
     result = AerSimulator().run(circuit, shots=2**20).result()
     statistics = result.get_counts()

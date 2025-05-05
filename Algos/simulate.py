@@ -188,7 +188,7 @@ if __name__ == "__main__":
     parser.add_argument("--nb_circuits", type=int, default=3, help="Nombre de circuits à générer.")
     parser.add_argument("--nb_qbits", type=int, default=20, help="Nombre de qubits par circuit.")
     parser.add_argument("--nb_gates", type=int, default=200, help="Nombre de portes par circuit.")
-    parser.add_argument("--shots", type=int, default=2**15, help="Nombre de répétitions pour chaque circuit.")
+    parser.add_argument("--shots", type=int, default=2**8, help="Nombre de répétitions pour chaque circuit.")
     parser.add_argument("--backend", type=str, default="ibm_sherbrooke", help="Nom du backend (ibm_brisbane ou ibm_sherbrooke).")
     parser.add_argument("--calculate", action="store_true", help="Envoie la requête sur le calculateur.")
     parser.add_argument("--adder", action="store_true", help="Use an adder instead of fuzzing.")

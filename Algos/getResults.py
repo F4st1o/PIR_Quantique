@@ -3,6 +3,8 @@ from qiskit_aer import AerSimulator
 from qiskit.circuit.library import get_standard_gate_name_mapping
 from qiskit.visualization import plot_histogram
 from qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler
+from qiskit.visualization import plot_histogram
+import matplotlib.pyplot as plt
 
 
 
@@ -20,6 +22,14 @@ with open('job_id_list.txt', 'r') as fichier :
 
         print(job.metrics())
         print("\n\n")
-        #print(result.data.meas.get_counts())
+
+        try :
+            print(result.data.c.get_counts())
+
+            plot_histogram(result.data.c.get_counts())
+            plt.show()
+
+        except :
+            pass
 
         job_id = fichier.readline()[:20]
