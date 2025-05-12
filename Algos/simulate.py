@@ -89,7 +89,7 @@ def simulate(circuit, backend, shots: int, nb_simulations=1) -> None :
 
 
 
-def calculate(circuit, service, backend, shots:int, nb_calculations=1) -> None :
+def calculate(circuit, service, backend, shots:int, nb_calculations=5) -> None :
     """
     Simulates the quantum `circuit` on a real backend.
 
@@ -115,9 +115,12 @@ def calculate(circuit, service, backend, shots:int, nb_calculations=1) -> None :
     counts_list = []
     measured_duration_list = []
     reported_duration_list = []
+
+    file = open("adder_data/" + datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S-%f")[:-3], "w")
     
     for n in range(nb_calculations) :
         print(f"\n\nCalculation {n+1}/{nb_calculations} :")
+        file.write(f"\n\nCalculation {n+1}/{nb_calculations} :\n")
 
         start = time.perf_counter()
         #-----------------
@@ -125,7 +128,7 @@ def calculate(circuit, service, backend, shots:int, nb_calculations=1) -> None :
         job = service.job(job.job_id())
 
         # Save the job ID to a file to access it later
-        with open('job_id_list.txt', 'a') as fichier:
+        with open('job_id_list_sherbrooke.txt', 'a') as fichier:
             fichier.write(job.job_id() + "\n")
 
         # Waiting for the job to finish
@@ -153,8 +156,9 @@ def calculate(circuit, service, backend, shots:int, nb_calculations=1) -> None :
         counts = result.data.c.get_counts()
         counts_list.append(counts)
         print("\nCounts :\n", counts)
-        plot_histogram(counts)
-        plt.show()
+        file.write(str(counts))
+        # plot_histogram(counts, title="Counts")
+        # plt.show()
 
 
         metrics = job.metrics()
@@ -171,31 +175,39 @@ def calculate(circuit, service, backend, shots:int, nb_calculations=1) -> None :
 
         reported_duration = datetime.datetime.fromisoformat(timestamps['finished'].replace("Z", "+00:00")) - datetime.datetime.fromisoformat(timestamps['running'].replace("Z", "+00:00"))
         reported_duration_list.append(reported_duration.total_seconds())
+
         print(f"\nMeasured duration : {measured_duration} seconds")
+        file.write(f"\nMeasured duration : {measured_duration} seconds\n")
+
         print(f"Reported duration : {reported_duration.total_seconds()} seconds")
+        file.write(f"Reported duration : {reported_duration.total_seconds()} seconds\n")
 
 
 
     print(f"\n\nAverage measured duration: {sum(measured_duration_list)/nb_calculations} seconds")
-    print(f"Average reported duration : {sum(reported_duration_list)/nb_calculations} seconds\n")
+    file.write(f"\n\nAverage measured duration: {sum(measured_duration_list)/nb_calculations} seconds\n")
 
+    print(f"Average reported duration : {sum(reported_duration_list)/nb_calculations} seconds\n")
+    file.write(f"Average reported duration : {sum(reported_duration_list)/nb_calculations} seconds\n\n")
+
+    file.close()
     return counts_list, measured_duration_list, reported_duration_list
 
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Simulate quantum circuits with optional parameters.")
-    parser.add_argument("--nb_circuits", type=int, default=3, help="Nombre de circuits à générer.")
-    parser.add_argument("--nb_qbits", type=int, default=20, help="Nombre de qubits par circuit.")
+    parser.add_argument("--nb_circuits", type=int, default=1, help="Nombre de circuits à générer.")
+    parser.add_argument("--nb_qbits", type=int, default=4, help="Nombre de qubits par circuit.")
     parser.add_argument("--nb_gates", type=int, default=200, help="Nombre de portes par circuit.")
-    parser.add_argument("--shots", type=int, default=2**8, help="Nombre de répétitions pour chaque circuit.")
+    parser.add_argument("--shots", type=int, default=2**17, help="Nombre de répétitions pour chaque circuit.")
     parser.add_argument("--backend", type=str, default="ibm_sherbrooke", help="Nom du backend (ibm_brisbane ou ibm_sherbrooke).")
     parser.add_argument("--calculate", action="store_true", help="Envoie la requête sur le calculateur.")
     parser.add_argument("--adder", action="store_true", help="Use an adder instead of fuzzing.")
     args = parser.parse_args()
 
 
-    TOKEN = "5beaf0819b6a2df9aa41c94a0e65b3d8520c89c158823545dcb70710b4ecb6efd5d524de45d2b58a1172d3675407c53edad235f46d861cec36b24bba12671853"
+    TOKEN = "5137363cbd6a7daca638b5f34d24f5121ab86c6d8a0c07b4bbb6e609f33f843e356fd68009261aa2d8bb97e33a75e8842ab60b2db3b8b45eab86c443dc4640d1"
 
  
     # Load simulator on backend
@@ -211,7 +223,7 @@ if __name__ == "__main__":
     
 
     for circuit, _ in circuits :
-        simulate(circuit, simu_backend, args.shots)
+        #simulate(circuit, simu_backend, args.shots)
 
         if args.calculate :
             calculate(circuit, service, real_backend, args.shots)

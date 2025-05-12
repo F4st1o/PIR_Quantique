@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 service = QiskitRuntimeService()
 
-with open('job_id_list.txt', 'r') as fichier :
+with open('job_id_list_past.txt', 'r') as fichier :
     job_id = fichier.readline()[:20]
 
     while (job_id != "") :
