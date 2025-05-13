@@ -223,7 +223,7 @@ if __name__ == "__main__":
     
 
     for circuit, _ in circuits :
-        #simulate(circuit, simu_backend, args.shots)
+        simulate(circuit, simu_backend, args.shots)
 
         if args.calculate :
             calculate(circuit, service, real_backend, args.shots)
