@@ -229,13 +229,13 @@ if __name__ == "__main__":
     parser.add_argument("--nb_qbits", type=int, default=4, help="Nombre de qubits par circuit.")
     parser.add_argument("--nb_gates", type=int, default=200, help="Nombre de portes par circuit.")
     parser.add_argument("--shots", type=int, default=2**17, help="Nombre de répétitions pour chaque circuit.")
-    parser.add_argument("--backend", type=str, default="ibm_sherbrooke", help="Nom du backend (ibm_brisbane ou ibm_sherbrooke).")
+    parser.add_argument("--backend", type=str, default="ibm_brisbane", help="Nom du backend (ibm_brisbane ou ibm_sherbrooke).")
     parser.add_argument("--calculate", action="store_true", help="Envoie la requête sur le calculateur.")
     parser.add_argument("--adder", action="store_true", help="Use an adder instead of fuzzing.")
     args = parser.parse_args()
 
 
-    TOKEN = "92ab7286207cc67fad39be53074e2856360e37427bfbc7af66151d18fde505a5265c0d159ee76ecefd78c7dd79cfda5464446d47f99cdb65b80effd5cf90526b"
+    TOKEN = "ae7ffa87a3b36ac2ceb57eb9d04917d91113cf83cd6be613337fe0f897dc1a5503bfd138feccdbc6d1a6e8b6b33ece4d8fa00809806130f4fcb76d5076042321"
 
  
     # Load simulator on backend
@@ -251,7 +251,7 @@ if __name__ == "__main__":
     
 
     for circuit, _ in circuits :
-        simulate(circuit, simu_backend, args.shots)
+        #simulate(circuit, simu_backend, args.shots)
 
         if args.calculate :
             calculate(circuit, service, real_backend, args.shots)
