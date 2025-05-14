@@ -46,13 +46,13 @@ def fuzzing(nb_circuits: int, nb_qbits: int, nb_gates: int, save=False, verbose 
     nb_gates : int
         Number of gates in the circuit
 
-    save : default False
+    save : default=False
         Save the circuits in a file
     
-    verbose : default False
+    verbose : default=False
         Print the circuits in the console
 
-    random_init : default False
+    random_init : default=False
         Apply a Hadamard gate to all Qbits at the beginning of the circuit
     
         

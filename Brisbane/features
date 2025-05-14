@@ -1,0 +1,11 @@
+EMD simu: 731.4092741935485
+EMD calc: 1502.8895161290318
+EMD simu/calc: 931.4875
+
+EMD vs uniform: 4228.096774193548
+
+Shannon entropy simu: 4.894333208417654
+Shannon entropy calc: 4.984261202961015
+
+Classical fidelity simu vs ideal: 0.9667230089237934
+Classical fidelity calc vs ideal: 0.8980387074746116

@@ -13,7 +13,7 @@ import datetime
 
 
 
-def simulate(circuit, backend, shots: int, nb_simulations=1) -> None :
+def simulate(circuit, backend, shots: int, nb_simulations=1) -> tuple[list[dict], list[dict]] :
     """
     Simulates the quantum `circuit` on a given backend.
 
@@ -30,6 +30,12 @@ def simulate(circuit, backend, shots: int, nb_simulations=1) -> None :
 
     nb_simulations : int
         Number of simulations to run
+
+        
+    Returns
+    -------
+    tuple[list[dict], list[dict]]
+        List of counts and durations  
     """
     pm = generate_preset_pass_manager(backend=backend, optimization_level=0)
     isa_qc = pm.run(circuit)
@@ -89,7 +95,7 @@ def simulate(circuit, backend, shots: int, nb_simulations=1) -> None :
 
 
 
-def calculate(circuit, service, backend, shots:int, nb_calculations=5) -> None :
+def calculate(circuit, service, backend, shots:int, nb_calculations=5) -> tuple[list[dict], list[dict], list[dict]] :
     """
     Simulates the quantum `circuit` on a real backend.
 
@@ -106,6 +112,15 @@ def calculate(circuit, service, backend, shots:int, nb_calculations=5) -> None :
 
     shots : int
         Number of shots for the calculation
+
+    nb_calculations : default=5
+        Number of times to run the same calculation
+
+
+    Returns
+    -------
+    tuple[list[dict], list[dict], list[dict]]
+        List of counts, measured durations and reported durations
     """
     pm = generate_preset_pass_manager(backend=backend, optimization_level=0)
     isa_qc = pm.run(circuit)
@@ -116,11 +131,11 @@ def calculate(circuit, service, backend, shots:int, nb_calculations=5) -> None :
     measured_duration_list = []
     reported_duration_list = []
 
-    file = open("adder_data/" + datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S-%f")[:-3], "w")
+    file = open("adder_data/" + datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S-%f")[:-3] + " - " + backend.name, "w")
     
     for n in range(nb_calculations) :
-        print(f"\n\nCalculation {n+1}/{nb_calculations} :")
-        file.write(f"\n\nCalculation {n+1}/{nb_calculations} :\n")
+        print(f"Calculation {n+1}/{nb_calculations} :")
+        file.write(f"Calculation {n+1}/{nb_calculations} :\n")
 
         start = time.perf_counter()
         #-----------------
@@ -179,16 +194,29 @@ def calculate(circuit, service, backend, shots:int, nb_calculations=5) -> None :
         print(f"\nMeasured duration : {measured_duration} seconds")
         file.write(f"\nMeasured duration : {measured_duration} seconds\n")
 
-        print(f"Reported duration : {reported_duration.total_seconds()} seconds")
-        file.write(f"Reported duration : {reported_duration.total_seconds()} seconds\n")
+        print(f"Reported duration : {reported_duration.total_seconds()} seconds\n\n")
+        file.write(f"Reported duration : {reported_duration.total_seconds()} seconds\n\n\n")
 
 
+    print(f"\nAverages :")
+    file.write(f"\nAverages :\n")
 
-    print(f"\n\nAverage measured duration: {sum(measured_duration_list)/nb_calculations} seconds")
-    file.write(f"\n\nAverage measured duration: {sum(measured_duration_list)/nb_calculations} seconds\n")
+    total_counts = counts_list[0].copy()
 
-    print(f"Average reported duration : {sum(reported_duration_list)/nb_calculations} seconds\n")
-    file.write(f"Average reported duration : {sum(reported_duration_list)/nb_calculations} seconds\n\n")
+    for count in counts_list :
+        for key,value in count.items() :
+            total_counts[key] += value
+
+    average_counts = {key: total_counts[key]/nb_calculations for key in total_counts}
+
+    print(average_counts)
+    file.write(f"{average_counts}\n")
+
+    print(f"Average measured duration : {sum(measured_duration_list)/nb_calculations} seconds")
+    file.write(f"Average measured duration : {sum(measured_duration_list)/nb_calculations} seconds\n")
+
+    print(f"Average reported duration : {sum(reported_duration_list)/nb_calculations} seconds")
+    file.write(f"Average reported duration : {sum(reported_duration_list)/nb_calculations} seconds\n")
 
     file.close()
     return counts_list, measured_duration_list, reported_duration_list
@@ -207,7 +235,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
 
-    TOKEN = "5137363cbd6a7daca638b5f34d24f5121ab86c6d8a0c07b4bbb6e609f33f843e356fd68009261aa2d8bb97e33a75e8842ab60b2db3b8b45eab86c443dc4640d1"
+    TOKEN = "92ab7286207cc67fad39be53074e2856360e37427bfbc7af66151d18fde505a5265c0d159ee76ecefd78c7dd79cfda5464446d47f99cdb65b80effd5cf90526b"
 
  
     # Load simulator on backend
