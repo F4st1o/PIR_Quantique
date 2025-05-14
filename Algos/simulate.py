@@ -168,7 +168,7 @@ def calculate(circuit, service, backend, shots:int, nb_calculations=5) -> tuple[
         # Print counts histogram
         # print(job.result())
         result = job.result()[0]
-        counts = result.data.c.get_counts()
+        counts = result.data.meas.get_counts()
         counts_list.append(counts)
         print("\nCounts :\n", counts)
         file.write(str(counts))

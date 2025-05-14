@@ -70,6 +70,34 @@ def classical_fidelity(
     return float(s ** 2)
 
 
+
+def plot_calculatorvssimulator(calc_counts, simul_counts, ideal_counts, name):
+    """
+    Affiche un histogramme pour calc_counts et simul_counts,
+    et une courbe pour ideal_counts.
+    """
+    plt.figure(figsize=(10, 5))
+    all_keys = set(calc_counts.keys()) | set(simul_counts.keys()) | set(ideal_counts.keys())
+    all_keys = sorted(all_keys)
+    calc_values = [calc_counts.get(k, 0) for k in all_keys]
+    simul_values = [simul_counts.get(k, 0) for k in all_keys]
+    ideal_values = [ideal_counts.get(k, 0) for k in all_keys]
+    x = range(len(all_keys))
+    width = 0.3
+
+    plt.plot([xi + width/2 for xi in x], ideal_values, color='green', marker='o', label='Ideal')
+    plt.bar(x, calc_values, width=width, label='Calculator', align='center', alpha=0.7)
+    plt.bar([xi + width for xi in x], simul_values, width=width, label='Simulator', align='center', alpha=0.7)
+    
+    plt.xticks([xi + width/2 for xi in x], all_keys, rotation=90)
+    plt.xlabel('Outputs')
+    plt.ylabel('Counts')
+    plt.title(f'Counts for {name} calculator and simulator')
+    plt.legend()
+    plt.tight_layout()
+    #plt.show()
+
+
 # Exemple d'utilisation
 if __name__ == "__main__":
     ideal = {'11101': 1010, '00011': 2040, '11000': 3597, '11100': 1529, '10101': 5085, '10010': 6755, '10110': 4591, '01101': 7214, '00001': 1047, '00110': 3529, '01001': 5003, '10001': 6999, '11010': 2533, '00101': 3073, '00111': 4120, '01011': 6185, '10111': 4017, '10100': 5670, '10011': 6314, '01110': 7677, '10000': 7859, '11011': 2080, '01111': 8242, '00100': 2536, '01010': 5533, '11110': 539, '00000': 507, '11001': 3064, '01000': 4675, '01100': 6570, '00010': 1479}
@@ -80,6 +108,9 @@ if __name__ == "__main__":
     counts_sherbrooke_simu = {'00001': 2843, '10101': 5249, '01110': 5357, '10011': 5421, '10111': 5408, '00111': 2819, '01101': 5374, '01100': 5403, '11111': 2852, '00010': 2875, '01000': 5551, '11101': 2778, '10010': 5543, '00110': 2813, '01010': 5340, '10110': 5233, '01011': 5464, '10001': 5285, '11011': 2739, '00101': 2852, '01111': 5417, '10000': 5383, '10100': 5388, '00000': 2904, '11000': 2740, '01001': 5387, '11010': 2715, '11100': 2702, '00100': 2808, '00011': 2825, '11001': 2704, '11110': 2900}
     counts_sherbrooke_calc = {'11101': 5176.8, '01111': 8891.8, '10100': 6040.6, '01101': 8462.6, '01100': 6331.8, '01011': 5222.2, '11111': 5416.4, '10101': 8010.0, '00111': 6352.2, '10000': 3445.0, '01010': 3928.4, '11001': 2981.8, '10010': 3563.0, '00000': 2688.8, '10001': 4628.4, '00010': 2810.8, '00011': 3840.4, '11011': 3108.4, '00110': 4779.8, '10111': 8434.0, '00001': 3608.4, '01110': 6681.8, '01001': 5057.2, '10110': 6284.4, '00100': 4494.0, '11110': 4010.8, '00101': 6115.0, '11010': 2340.0, '10011': 4799.4, '11100': 3844.4, '11000': 2209.6, '01000': 3728.2}
 
+
+    plot_calculatorvssimulator(counts_sherbrooke_calc,counts_sherbrooke_simu, ideal, "Sherbrooke")
+    plot_calculatorvssimulator(counts_brisbane_calc,counts_brisbane_simu, ideal, "Brisbane")
 
     plot_histogram(counts_sherbrooke_simu, title="Counts for Sherbrooke simulator")
     plot_histogram(counts_sherbrooke_calc, title="Average counts for Sherbrooke calculator")
