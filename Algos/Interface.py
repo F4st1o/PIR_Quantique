@@ -11,7 +11,7 @@ from datetime import datetime
 import pickle
 import matplotlib.pyplot as plt
 
-My_Key = "5beaf0819b6a2df9aa41c94a0e65b3d8520c89c158823545dcb70710b4ecb6efd5d524de45d2b58a1172d3675407c53edad235f46d861cec36b24bba12671853"
+My_Key = "" # Put your token between the quotes
 
 
 # Charger le compte IBM

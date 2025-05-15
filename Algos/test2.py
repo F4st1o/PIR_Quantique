@@ -5,7 +5,7 @@ from qiskit_ibm_runtime import Options
 # 1. Connexion au compte IBM Quantum (méthode moderne)
 service = QiskitRuntimeService(
     channel="ibm_quantum",
-    token="5beaf0819b6a2df9aa41c94a0e65b3d8520c89c158823545dcb70710b4ecb6efd5d524de45d2b58a1172d3675407c53edad235f46d861cec36b24bba12671853" # Remplacer par votre token réel
+    My_Key = "" # Put your token between the quotes
 )
 
 # 2. Création du circuit quantique (inchangé)

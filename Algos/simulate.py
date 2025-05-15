@@ -235,7 +235,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
 
-    TOKEN = "ae7ffa87a3b36ac2ceb57eb9d04917d91113cf83cd6be613337fe0f897dc1a5503bfd138feccdbc6d1a6e8b6b33ece4d8fa00809806130f4fcb76d5076042321"
+    My_Key = "" # Put your token between the quotes
 
  
     # Load simulator on backend
